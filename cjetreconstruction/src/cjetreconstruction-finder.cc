@@ -27,9 +27,13 @@
 #include "HepMC3/ReaderAscii.h"
 
 #include "cjetreconstruction-utils.hh"
+
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
 extern "C" {
 #include "julia_init.h"
 }
+#endif
+
 using namespace std;
 using namespace popl;
 using Time = std::chrono::high_resolution_clock;
@@ -57,7 +61,10 @@ run_clustering(std::vector<jetreconstruction_PseudoJet> input_particles,
 }
 
 int main(int argc, char *argv[]) {
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
   init_julia(0, nullptr);
+#endif
+
   // Default values
   int maxevents = -1;
   int skip_events = 0;
@@ -247,6 +254,9 @@ int main(int argc, char *argv[]) {
   std::cout << "Total time " << time_total << " us" << endl;
   std::cout << "Time per event " << mean_per_event << " +- " << sigma_per_event << " us" << endl;
   std::cout << "Lowest time per event " << time_lowest << " us" << endl;
+
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
   shutdown_julia(0);
+#endif
   return 0;
 }
