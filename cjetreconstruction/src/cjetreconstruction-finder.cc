@@ -21,6 +21,11 @@
 #include "popl.hpp"
 
 #include "JetReconstruction.h"
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
+extern "C" {
+#include "julia_init.h"
+}
+#endif
 
 #include "HepMC3/GenEvent.h"
 #include "HepMC3/GenParticle.h"
@@ -28,11 +33,7 @@
 
 #include "cjetreconstruction-utils.hh"
 
-#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
-extern "C" {
-#include "julia_init.h"
-}
-#endif
+#include <julia.h> // for jl_gc functions
 
 using namespace std;
 using namespace popl;
@@ -48,7 +49,7 @@ void sorted_by_pt(jetreconstruction_JetsResult &jets) {
 }
 
 jetreconstruction_ClusterSequence
-run_clustering(std::vector<jetreconstruction_PseudoJet> input_particles,
+run_clustering(std::vector<jetreconstruction_PseudoJet>& input_particles,
                jetreconstruction_RecoStrategy strategy,
                jetreconstruction_JetAlgorithm algorithm, double R, double p) {
 
@@ -89,6 +90,8 @@ int main(int argc, char *argv[]) {
   auto njets_option = opts.add<Value<int>>("", "njets", "njets value for exclusive jets");
   auto dump_option = opts.add<Value<string>>("d", "dump", "Filename to dump jets to");
   auto debug_clusterseq_option = opts.add<Switch>("c", "debug-clusterseq", "Dump cluster sequence jet and history content");
+  auto gc_option = opts.add<Switch>("", "gc", "Enable garbage collector");
+
 
 
   opts.parse(argc, argv);
@@ -119,6 +122,9 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
+  std::cout << "Previous GC state: " << jl_gc_is_enabled() << std::endl;
+  jl_gc_enable(gc_option->count());
+  std::cout << "Current GC state:  " << jl_gc_is_enabled() << std::endl;
   // read in input events
   //----------------------------------------------------------
   auto events = read_input_events(input_file.c_str(), maxevents);
@@ -190,6 +196,9 @@ int main(int argc, char *argv[]) {
   double time_lowest = 1.0e20;
   for (long trial = 0; trial < trials; ++trial) {
     std::cout << "Trial " << trial << " ";
+    if (jl_gc_is_enabled() == 0) {
+      jl_gc_collect(JL_GC_FULL);
+    }
     auto start_t = std::chrono::steady_clock::now();
     for (size_t ievt = skip_events_option->value(); ievt < events.size(); ++ievt) {
       auto cluster_sequence =
@@ -225,12 +234,12 @@ int main(int argc, char *argv[]) {
         }
 
         // Dump the cluster sequence history content as well?
-         if (debug_clusterseq_option->is_set()) {
-        //  dump_clusterseq(cluster_sequence);
+        if (debug_clusterseq_option->is_set()) {
+          //  dump_clusterseq(cluster_sequence);
         }
-        jetreconstruction_ClusterSequence_free_members(&cluster_sequence);
-        jetreconstruction_JetsResult_free_members(&final_jets);
       }
+      jetreconstruction_ClusterSequence_free_members(&cluster_sequence);
+      jetreconstruction_JetsResult_free_members(&final_jets);
     }
     auto stop_t = std::chrono::steady_clock::now();
     auto elapsed = stop_t - start_t;
@@ -255,8 +264,9 @@ int main(int argc, char *argv[]) {
   std::cout << "Time per event " << mean_per_event << " +- " << sigma_per_event << " us" << endl;
   std::cout << "Lowest time per event " << time_lowest << " us" << endl;
 
+  const int ret_code = 0;
 #ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
-  shutdown_julia(0);
+  shutdown_julia(ret_code);
 #endif
-  return 0;
+  return ret_code;
 }
