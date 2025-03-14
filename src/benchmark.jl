@@ -16,7 +16,7 @@ using LorentzVectorHEP
 using JetReconstruction
 
 # Backends for the jet reconstruction
-@enumx T=Code Backends JetReconstruction Fastjet AkTPython AkTNumPy
+@enumx T=Code Backends JetReconstruction Fastjet AkTPython AkTNumPy CJetReconstruction
 const AllCodeBackends = [String(Symbol(x)) for x in instances(Backends.Code)]
 
 # Parsing for Enum types
@@ -145,14 +145,15 @@ function julia_jet_process_avg_time(events::Vector{Vector{T}};
     lowest_time
 end
 
-function fastjet_jet_process_avg_time(input_file::AbstractString;
-    ptmin::Float64 = 5.0,
-    radius::Float64 = 0.4,
-    p::Union{Real, Nothing} = nothing,
-    algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-    strategy::RecoStrategy.Strategy,
-    nsamples::Integer = 1)
-    
+function external_benchmark_avg_time(input_file::AbstractString;
+                                     ptmin::Float64 = 5.0,
+                                     radius::Float64 = 0.4,
+                                     p::Union{Real, Nothing} = nothing,
+                                     algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                                     strategy::RecoStrategy.Strategy,
+                                     nsamples::Integer = 1,
+                                     backend::Backends.Code = Backends.Fastjet)
+
     # FastJet reader cannot handle gzipped files
     if endswith(input_file, ".gz")
         input_file = hepmc3gunzip(input_file)
@@ -163,19 +164,29 @@ function fastjet_jet_process_avg_time(input_file::AbstractString;
     algorithm = algorithm)
     
     # @warn "FastJet timing not implemented yet"
-    fj_bin = joinpath(@__DIR__, "..", "fastjet", "build", "fastjet-finder")
-    fj_args = String[]
-    push!(fj_args, "-p", string(p))
-    push!(fj_args, "-s", string(strategy))
-    push!(fj_args, "-R", string(radius))
-    push!(fj_args, "--ptmin", string(ptmin))
+    if backend == Backends.Fastjet
+        bench_dir = "fastjet"
+        bench_name = "fastjet-finder"
+    elseif backend == Backends.CJetReconstruction
+        bench_dir = "cjetreconstruction"
+        bench_name = "cjetreconstruction-finder"
+    else 
+        @error "Unsupported backend for external benchmark: $backend"
+        return 0.0
+    end
+    bench_bin = joinpath(@__DIR__, "..", bench_dir, "build", bench_name)
+    bench_args = String[]
+    push!(bench_args, "-p", string(p))
+    push!(bench_args, "-s", string(strategy))
+    push!(bench_args, "-R", string(radius))
+    push!(bench_args, "--ptmin", string(ptmin))
     
-    push!(fj_args, "-n", string(nsamples))
-    @info "Fastjet command: $fj_bin $fj_args $input_file"
-    fj_output = read(`$fj_bin $fj_args $input_file`, String)
-    min = tryparse(Float64, match(r"Lowest time per event ([\d\.]+) us", fj_output)[1])
+    push!(bench_args, "-n", string(nsamples))
+    @info "Benchmark command: $bench_bin $bench_args $input_file"
+    bench_output = read(`$bench_bin $bench_args $input_file`, String)
+    min = tryparse(Float64, match(r"Lowest time per event ([\d\.]+) us", bench_output)[1])
     if isnothing(min)
-        @error "Failed to parse output from FastJet script"
+        @error "Failed to parse output from external benchmark script"
         return 0.0
     end
     min
@@ -379,13 +390,14 @@ function main()
             p = args[:power],
             strategy = args[:strategy],
             nsamples = samples, repeats = args[:repeats])
-        elseif args[:code] == Backends.Fastjet
-            time_per_event = fastjet_jet_process_avg_time(event_file; ptmin = args[:ptmin],
+        elseif args[:code] ∈ (Backends.Fastjet, Backends.CJetReconstruction)
+            time_per_event = external_benchmark_avg_time(event_file; ptmin = args[:ptmin],
             radius = args[:radius],
             algorithm = args[:algorithm],
             p = args[:power],
             strategy = args[:strategy],
-            nsamples = samples)
+            nsamples = samples,
+            backend = args[:code])
         elseif args[:code] in (Backends.AkTPython, Backends.AkTNumPy)
             time_per_event = python_jet_process_avg_time(args[:code], event_file; ptmin = args[:ptmin],
             radius = args[:radius],
