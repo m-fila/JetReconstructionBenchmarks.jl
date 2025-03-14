@@ -122,9 +122,6 @@ int main(int argc, char *argv[]) {
     exit(EXIT_FAILURE);
   }
 
-  std::cout << "Previous GC state: " << jl_gc_is_enabled() << std::endl;
-  jl_gc_enable(gc_option->count());
-  std::cout << "Current GC state:  " << jl_gc_is_enabled() << std::endl;
   // read in input events
   //----------------------------------------------------------
   auto events = read_input_events(input_file.c_str(), maxevents);
@@ -196,8 +193,10 @@ int main(int argc, char *argv[]) {
   double time_lowest = 1.0e20;
   for (long trial = 0; trial < trials; ++trial) {
     std::cout << "Trial " << trial << " ";
-    if (jl_gc_is_enabled() == 0) {
-      jl_gc_collect(JL_GC_FULL);
+    if (!gc_option->count()) {
+      jl_gc_enable(1); // collect actually sweeps only with enabled gc
+      jl_gc_collect(JL_GC_AUTO); // FULL takes longer without any visible change to timing of measured code
+      jl_gc_enable(0);
     }
     auto start_t = std::chrono::steady_clock::now();
     for (size_t ievt = skip_events_option->value(); ievt < events.size(); ++ievt) {
