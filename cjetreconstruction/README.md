@@ -18,5 +18,5 @@ cmake --build build
 > Custom search path can be set with `Julia_ROOT`, for instance:
 >
 > ```sh
-> JULIA_ROOT=${HOME}/.julia/juliaup/julia-nightly/ cmake -S . -B build
+> JULIA_ROOT=${HOME}/.julia/juliaup/julia-1.12-nightly/ cmake -S . -B build
 > ```
