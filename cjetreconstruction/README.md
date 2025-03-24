@@ -18,7 +18,7 @@ cmake --build build
 > Custom search path can be set with `Julia_ROOT`, for instance:
 >
 > ```sh
-> JULIA_ROOT=${HOME}/.julia/juliaup/julia-1.12-nightly/ cmake -S . -B build
+> Julia_ROOT=${HOME}/.julia/juliaup/julia-1.12/ cmake -S . -B build
 > ```
 >
 > Also make sure that for Julia 1.12 at least GLIBCXX_3.4.30 (gcc 12.1.0) is used.
