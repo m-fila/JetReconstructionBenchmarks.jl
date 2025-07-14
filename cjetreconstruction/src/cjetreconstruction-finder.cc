@@ -51,11 +51,13 @@ void sorted_by_pt(jetreconstruction_JetsResult &jets) {
 jetreconstruction_ClusterSequence
 run_clustering(std::vector<jetreconstruction_PseudoJet>& input_particles,
                jetreconstruction_RecoStrategy strategy,
-               jetreconstruction_JetAlgorithm algorithm, double R, double p) {
+               jetreconstruction_JetAlgorithm algorithm,
+               jetreconstruction_RecombinationScheme recombine_scheme,
+               double R, double p) {
 
   auto clust_seq = jetreconstruction_ClusterSequence{};
   auto retv = jetreconstruction_jet_reconstruct(
-      input_particles.data(), input_particles.size(), algorithm, R, strategy,
+      input_particles.data(), input_particles.size(), algorithm, p, R, strategy, recombine_scheme,
       &clust_seq);
   assert(retv == jetreconstruction_StatusCode::JETRECONSTRUCTION_STATUSCODE_OK);
   return clust_seq;
@@ -73,6 +75,7 @@ int main(int argc, char *argv[]) {
   string mystrategy = "Best";
   double power = -1.0;
   string alg = "";
+  string recombine = "";
   double R = 0.4;
   string dump_file = "";
 
@@ -85,6 +88,7 @@ int main(int argc, char *argv[]) {
   auto power_option = opts.add<Value<double>>("p", "power", "Algorithm p value: -1=antikt, 0=cambridge_aachen, 1=inclusive kt; otherwise generalised Kt", power, &power);
   auto alg_option = opts.add<Value<string>>("A", "algorithm", "Algorithm: AntiKt CA Kt GenKt EEKt Durham (overrides power)", alg, &alg);
   auto radius_option = opts.add<Value<double>>("R", "radius", "Algorithm R parameter", R, &R);
+  auto recombine_option = opts.add<Value<string>>("", "recombine", "Recombination scheme for jet merging", recombine, &recombine);
   auto ptmin_option = opts.add<Value<double>>("", "ptmin", "pt cut for inclusive jets");
   auto dijmax_option = opts.add<Value<double>>("", "dijmax", "dijmax value for exclusive jets");
   auto njets_option = opts.add<Value<int>>("", "njets", "njets value for exclusive jets");
@@ -178,7 +182,16 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  std::cout << "Strategy: " << mystrategy << "; Power: " << power << "; Algorithm " << algorithm << std::endl;
+  auto recombine_scheme = JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
+  std::cout << recombine << std::endl;
+  if (recombine == "pt_scheme") {
+    recombine_scheme = JETRECONCSTRUCTION_RECOMBINATIONSCHEME_PTSCHEME;
+  } else if (recombine == "pt2_scheme") {
+    recombine_scheme = JETRECONCSTRUCTION_RECOMBINATIONSCHEME_PT2SCHEME;
+  }
+
+  std::cout << "Strategy: " << mystrategy << "; Power: " << power << "; Algorithm " << algorithm << 
+    "; Recombine " << recombine_scheme << std::endl;
 
   auto dump_fh = stdout;
   if (dump_option->is_set()) {
@@ -201,7 +214,7 @@ int main(int argc, char *argv[]) {
     auto start_t = std::chrono::steady_clock::now();
     for (size_t ievt = skip_events_option->value(); ievt < events.size(); ++ievt) {
       auto cluster_sequence =
-          run_clustering(events[ievt], strategy, algorithm, R, power);
+          run_clustering(events[ievt], strategy, algorithm, recombine_scheme, R, power);
       auto final_jets = jetreconstruction_JetsResult{nullptr,0};
       if (ptmin_option->is_set()) {
         auto retv = jetreconstruction_inclusive_jets(

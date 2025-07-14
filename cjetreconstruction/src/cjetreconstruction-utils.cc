@@ -44,12 +44,13 @@ std::vector<std::vector<jetreconstruction_PseudoJet>> read_input_events(const ch
     ++events_parsed;
     input_particles.clear();
     input_particles.reserve(evt.particles().size());
+    long history_index = 0 ; // particle history index must correspond to their index+1 in array
     for(auto p: evt.particles()){
       if(p->status() == 1){
         auto jet = jetreconstruction_PseudoJet{};
         auto retv = jetreconstruction_PseudoJet_init(
             &jet, p->momentum().px(), p->momentum().py(), p->momentum().pz(),
-            p->momentum().e());
+            p->momentum().e(), ++history_index);
         assert(retv ==
                jetreconstruction_StatusCode::JETRECONSTRUCTION_STATUSCODE_OK);
         input_particles.push_back(std::move(jet));
