@@ -79,18 +79,14 @@ function julia_jet_process_avg_time(events::Vector{Vector{T}};
     repeats::Int = 1) where {T <: JetReconstruction.FourMomentum}
     @info "Will process $(size(events)[1]) events, repeating $(repeats) time(s)"
     
-    # Set consistent algorithm and power
-    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-    algorithm = algorithm)
-    
     n_events = length(events)
     
     # Warmup code if we are doing a multi-sample timing run
     if nsamples > 1
         @info "Doing initial warm-up run"
         for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = radius, p = p,
-            strategy = strategy); ptmin = ptmin)
+            _ = inclusive_jets(jet_reconstruct(event, R = radius,
+            algorithm = algorithm, p = p, strategy = strategy); ptmin = ptmin)
         end
     end
     
@@ -112,8 +108,8 @@ function julia_jet_process_avg_time(events::Vector{Vector{T}};
         Threads.@threads for event_counter ∈ 1:n_events * repeats
             event_idx = mod1(event_counter, n_events)
             my_t = Threads.threadid()
-            inclusive_jets(jet_reconstruct(events[event_idx], R = radius, p = p,
-            strategy = strategy), ptmin = ptmin)
+            inclusive_jets(jet_reconstruct(events[event_idx], R = radius,
+            algorithm = algorithm, p = p, strategy = strategy), ptmin = ptmin)
         end
         t_stop = time_ns()
         dt_μs = convert(Float64, t_stop - t_start) * 1.e-3
@@ -158,9 +154,8 @@ function fastjet_jet_process_avg_time(input_file::AbstractString;
         input_file = hepmc3gunzip(input_file)
     end
     
-    # Set consistent algorithm and power
-    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-    algorithm = algorithm)
+    # Get consistent algorithm power
+    p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     
     # @warn "FastJet timing not implemented yet"
     fj_bin = joinpath(@__DIR__, "..", "fastjet", "build", "fastjet-finder")
@@ -194,10 +189,6 @@ function python_jet_process_avg_time(backend::Backends.Code,
     if endswith(input_file, ".gz")
         input_file = hepmc3gunzip(input_file)
     end
-    
-    # Set consistent algorithm and power
-    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-    algorithm = algorithm)
 
     # There are some limitations in the Python code - only AntiKt is supported,
     # and the strategy has to be manually set
@@ -351,8 +342,8 @@ function main()
         hepmc3_files_df[:, :mean_particles] .= -1
     end
 
-    # Get consistent algorithm and power here, so that missing values are filled
-    (power, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = args[:power], algorithm = args[:algorithm])
+    # Get consistent algorithm power
+    power = JetReconstruction.get_algorithm_power(p = args[:power], algorithm = args[:algorithm])
     
     event_timing = Float64[]
     n_samples = Int[]
@@ -404,7 +395,7 @@ function main()
     # Decorate the DataFrame with the metadata of the runs
     hepmc3_files_df[:, :code] .= args[:code]
     hepmc3_files_df[:, :code_version] .= args[:code_version]
-    hepmc3_files_df[:, :algorithm] .= algorithm
+    hepmc3_files_df[:, :algorithm] .= args[:algorithm]
     hepmc3_files_df[:, :strategy] .= args[:strategy]
     hepmc3_files_df[:, :radius] .= args[:radius]
     hepmc3_files_df[:, :power] .= power
