@@ -205,17 +205,17 @@ int main(int argc, char* argv[]) {
 
       vector<fastjet::PseudoJet> final_jets;
       if (ptmin_option->is_set()) {
-        final_jets = fastjet::sorted_by_pt(cluster_sequence.inclusive_jets(ptmin_option->value()));
+        final_jets = cluster_sequence.inclusive_jets(ptmin_option->value());
       } else if (dijmax_option->is_set()) {
-        cout << "dijmax: " << dijmax_option->value() << endl;
-        final_jets = fastjet::sorted_by_pt(cluster_sequence.inclusive_jets(ptmin_option->value()));
-        final_jets = fastjet::sorted_by_pt(cluster_sequence.exclusive_jets(dijmax_option->value()));
+        final_jets = cluster_sequence.exclusive_jets(dijmax_option->value());
       } else if (njets_option->is_set()) {
-        final_jets = fastjet::sorted_by_pt(cluster_sequence.exclusive_jets(njets_option->value()));
+        final_jets = cluster_sequence.exclusive_jets(njets_option->value());
       }
 
       if (dump_option->is_set() && trial==0) {
-         fprintf(dump_fh, "Jets in processed event %zu\n", ievt+1);
+        // sort by pt so files can be compared
+        final_jets = fastjet::sorted_by_pt(final_jets);
+        fprintf(dump_fh, "Jets in processed event %zu\n", ievt+1);
     
         // print out the details for each jet
         for (unsigned int i = 0; i < final_jets.size(); i++) {
