@@ -133,7 +133,7 @@ The `benchmark.jl` script has quite a few options used for detailed control of
 the jobs it runs. The most important ones are:
 
 ```sh
-julia --project benchmark.jl --code CODE --algorithm ALG --strategy STRAT --trials TRIALS INPUT_FILE(S)
+julia --project benchmark.jl --code CODE --algorithm ALG --strategy STRAT --nsamples TRIALS INPUT_FILE(S)
 ```
 
 The `CODE` option selects the code implementation:

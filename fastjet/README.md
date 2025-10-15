@@ -7,8 +7,9 @@ algorithms.
 The code requires the fastjet libraries (<https://fastjet.fr/>) as well as those
 from HepMC3 (<https://gitlab.cern.ch/hepmc/HepMC3>).
 
-Depending on your system setup you make need to add the path to the HepMC3 CMake
-setup files to `CMAKE_PREFIX_PATH`.
+Depending on your system setup you make need to add the path to the HepMC3 and
+Fastjet CMake setup files to `CMAKE_PREFIX_PATH`. It may also be necessary to
+set `siscone_DIR`.
 
 ## Compilation
 
@@ -32,10 +33,11 @@ jets. This is the standard executable used to benchmark fastjet.
 
 Allowed options:
   -h, --help                  produce help message
-  -m, --maxevents arg (=-1)   Maximum events in file to process (-1 = all events)
-  -n, --trials arg (=1)       Number of repeated trials
+  -n, --maxevents arg (=-1)   Maximum events in file to process (-1 = all events)
+  -m, --nsamples arg (=1)     Number of repeated trials
   -s, --strategy arg (=Best)  Valid values are 'Best' (default), 'N2Plain', 'N2Tiled'
-  -p, --power arg (=-1)       Algorithm p value: -1=antikt, 0=cambridge_aachen, 1=inclusive kt
+  -A, --algorithm arg         Valid values are 'AntiKt' 'CA' 'Kt' 'GenKt' 'EEKt' 'Durham'
+  -p, --power arg             Algorithm p value, only needed for 'GenKt' and 'EEKt'
   -R, --radius arg (=0.4)     Algorithm R parameter
   --ptmin arg                 pt cut for inclusive jets
   --dijmax arg                dijmax value for exclusive jets

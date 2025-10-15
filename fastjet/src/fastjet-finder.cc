@@ -87,12 +87,12 @@ int main(int argc, char* argv[]) {
 
   OptionParser opts("Allowed options");
   auto help_option = opts.add<Switch>("h", "help", "produce help message");
-  auto max_events_option = opts.add<Value<int>>("m", "maxevents", "Maximum events in file to process (-1 = all events)", maxevents, &maxevents);
+  auto max_events_option = opts.add<Value<int>>("n", "maxevents", "Maximum events in file to process (-1 = all events)", maxevents, &maxevents);
   auto skip_events_option = opts.add<Value<int>>("", "skipevents", "Number of events to skip over (0 = none)", skip_events, &skip_events);
-  auto trials_option = opts.add<Value<int>>("n", "trials", "Number of repeated trials", trials, &trials);
+  auto trials_option = opts.add<Value<int>>("m", "nsamples", "Number of repeated trials", trials, &trials);
   auto strategy_option = opts.add<Value<string>>("s", "strategy", "Valid values are 'Best' (default), 'N2Plain', 'N2Tiled'", mystrategy, &mystrategy);
-  auto power_option = opts.add<Value<double>>("p", "power", "Algorithm p value: -1=antikt, 0=cambridge_aachen, 1=inclusive kt; otherwise generalised Kt", power, &power);
   auto alg_option = opts.add<Value<string>>("A", "algorithm", "Algorithm: AntiKt CA Kt GenKt EEKt Durham (overrides power)", alg, &alg);
+  auto power_option = opts.add<Value<double>>("p", "power", "Algorithm p value, only used/needed for GenKt and EEKt", power, &power);
   auto radius_option = opts.add<Value<double>>("R", "radius", "Algorithm R parameter", R, &R);
   auto recombine_option = opts.add<Value<string>>("", "recombine", "Recombination scheme for jet merging", recombine, &recombine);
   auto ptmin_option = opts.add<Value<double>>("", "ptmin", "pt cut for inclusive jets");
@@ -162,16 +162,6 @@ int main(int argc, char* argv[]) {
     } else {
       std::cout << "Unknown algorithm type: " << alg << std::endl;
       exit(1);
-    }
-  } else {
-    if (power == -1.0) {
-      algorithm = fastjet::antikt_algorithm;
-    } else if (power == 0.0) {
-      algorithm = fastjet::cambridge_aachen_algorithm;
-    } else if (power == 1.0) {
-      algorithm = fastjet::kt_algorithm;
-    } else {
-      algorithm = fastjet::genkt_algorithm;
     }
   }
 

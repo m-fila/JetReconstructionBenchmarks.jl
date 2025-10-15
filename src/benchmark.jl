@@ -157,17 +157,20 @@ function fastjet_jet_process_avg_time(input_file::AbstractString;
     # Get consistent algorithm power
     p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     
-    # @warn "FastJet timing not implemented yet"
     fj_bin = joinpath(@__DIR__, "..", "fastjet", "build", "fastjet-finder")
     fj_args = String[]
-    push!(fj_args, "-p", string(p))
+    push!(fj_args, "-A", string(algorithm))
+    if !isnothing(p)
+        push!(fj_args, "-p", string(p))
+    end
     push!(fj_args, "-s", string(strategy))
     push!(fj_args, "-R", string(radius))
     push!(fj_args, "--ptmin", string(ptmin))
     
-    push!(fj_args, "-n", string(nsamples))
+    push!(fj_args, "-m", string(nsamples))
     @info "Fastjet command: $fj_bin $fj_args $input_file"
     fj_output = read(`$fj_bin $fj_args $input_file`, String)
+    @debug "Fastjet output:\n$fj_output"
     min = tryparse(Float64, match(r"Lowest time per event ([\d\.]+) us", fj_output)[1])
     if isnothing(min)
         @error "Failed to parse output from FastJet script"
