@@ -178,11 +178,11 @@ function main()
 
     # Try to read events into the correct type!
     if JetReconstruction.is_ee(args[:algorithm])
-        JetType = EEjet
+        JetType = EEJet
     else
         JetType = PseudoJet
     end
-    events::Vector{Vector{JetType}} = read_final_state_particles(args[:file]; T = JetType)
+    events::Vector{Vector{JetType}} = read_final_state_particles(args[:file], JetType)
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt

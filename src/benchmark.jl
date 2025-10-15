@@ -363,7 +363,7 @@ function main()
             else
                 JetType = PseudoJet
             end
-            events::Vector{Vector{JetType}} = read_final_state_particles(event_file; T = JetType)
+            events::Vector{Vector{JetType}} = read_final_state_particles(event_file, JetType)
             time_per_event = julia_jet_process_avg_time(events; ptmin = args[:ptmin],
             radius = args[:radius],
             algorithm = args[:algorithm],

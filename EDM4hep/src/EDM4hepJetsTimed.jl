@@ -46,7 +46,7 @@ function main()
         total_time += end_jet - start_jet
         # @info begin
         #     jets = "Event $(ievt)\n"
-        #     for jet in exclusive_jets(cs; njets = 2, T = EEjet)
+        #     for jet in exclusive_jets(cs, EEJet; njets = 2)
         #         jets *= " $jet\n"
         #     end
         #     jets

@@ -20,7 +20,7 @@ function get_exclusive_jet_selection(filename, ptmin, R)
     events = read_final_state_particles(filename)
     for event in events
         cs = jet_reconstruct(event; p=0, R = R)
-        push!(exclusive_jets, inclusive_jets(cs; ptmin=ptmin, T=PseudoJet))
+        push!(exclusive_jets, inclusive_jets(cs, PseudoJet; ptmin=ptmin))
         push!(cluster_seqs, cs)
     end
     (cluster_seqs, exclusive_jets)

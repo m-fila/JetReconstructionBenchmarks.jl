@@ -19,7 +19,7 @@ for backend in JetReconstruction Fastjet; do
     for strategy in N2Plain N2Tiled; do
         for radius in 0.2 0.4 1.0 1.5 2.0 3.0; do
             for algorithm in AntiKt CA Kt; do
-                cmd="julia --project src/benchmark.jl --code $backend $p -R $radius -A $algorithm -S $strategy -m 4 --results $output $inputs"
+                cmd="julia --project src/benchmark.jl --code $backend -R $radius -A $algorithm -S $strategy -m 4 --results $output $inputs"
                 echo "Benchmark: $cmd"
                 $cmd
             done
